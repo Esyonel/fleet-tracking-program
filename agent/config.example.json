@@ -1,0 +1,19 @@
+{
+  "server": "https://ornek-site.com/filament",
+  "agent_token": "config.php-deki-AGENT_TOKEN-ile-ayni",
+  "send_every_s": 20,
+  "printers": [
+    {
+      "name": "Bambu Lab A2L",
+      "serial": "A2L-SERI-NO",
+      "ip": "192.168.1.50",
+      "access_code": "A2L-ERISIM-KODU"
+    },
+    {
+      "name": "Bambu Lab X2D",
+      "serial": "X2D-SERI-NO",
+      "ip": "192.168.1.51",
+      "access_code": "X2D-ERISIM-KODU"
+    }
+  ]
+}

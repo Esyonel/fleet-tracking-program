@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Filament Takip</title>
+<meta name="theme-color" content="#0d1017">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Filament">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="static/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="static/icon-180.png">
+<link rel="stylesheet" href="static/style.css?v=20261021-6">
+</head>
+<body>
+
+<section id="login" class="login hidden">
+  <form id="loginForm" class="card login-card">
+    <h1>Filament Takip</h1>
+    <p id="loginHint" class="muted hidden">Yönetim paneli kullanıcı adı ve şifrenle gir.</p>
+    <input id="user" class="hidden" placeholder="Kullanıcı adı" autocomplete="username">
+    <input type="password" id="pw" placeholder="Şifre" autocomplete="current-password" required>
+    <button type="submit">Giriş</button>
+    <p id="loginErr" class="err"></p>
+  </form>
+</section>
+
+<div id="app" class="hidden">
+  <header class="topbar">
+    <h1>Filament Takip</h1>
+    <nav>
+      <button data-tab="ozet" class="active"><i>▦</i><span>Özet</span></button>
+      <button data-tab="makara"><i>◎</i><span>Filament</span></button>
+      <button data-tab="yazici"><i>⎙</i><span>Yazıcı</span></button>
+      <button data-tab="baski"><i>⚖</i><span>Baskı</span></button>
+      <button data-tab="alim"><i>＋</i><span>Alım</span></button>
+      <button data-tab="satis"><i>₺</i><span>Satış</span></button>
+      <button data-tab="atik"><i>♻</i><span>Atık</span></button>
+    </nav>
+    <a class="btn ghost" href="api.php?a=backup" download title="Veritabanının yedeğini bilgisayara indir">⬇ Yedek</a>
+    <button id="logout" class="ghost">Çıkış</button>
+  </header>
+
+  <main>
+    <section id="tab-ozet" class="tab"></section>
+
+    <section id="tab-makara" class="tab hidden">
+      <div class="toolbar">
+        <input id="search" class="search" placeholder="Marka, seri, renk veya kod ara">
+        <div class="view-toggle" role="group" aria-label="Görünüm">
+          <button type="button" data-view="grid" title="Kart görünümü">▦ Kart</button>
+          <button type="button" data-view="list" title="Liste görünümü">☰ Liste</button>
+        </div>
+        <button data-act="addCard">+ Stok kartı ekle</button>
+      </div>
+      <p class="muted">Ayrıntı için filamente tıkla. Stok, Alım sekmesinden alış girilince eklenir.</p>
+      <div id="spoolGrid" class="grid"></div>
+    </section>
+
+    <section id="tab-alim" class="tab hidden">
+      <section id="reorder" class="card reorder"></section>
+      <form id="purchaseForm" class="card form">
+        <h3>Yeni alım</h3>
+        <label>Tarih <input type="date" name="date" required></label>
+        <label>Stok kartı
+          <span class="card-pick"><select name="card_id" id="pCard" required></select><button type="button" class="ghost" data-act="addCard">+ Yeni kart</button></span>
+        </label>
+        <div id="pCardInfo" class="cat-hint muted"></div>
+        <label>Adet <input type="number" name="qty" value="1" min="1" max="200" required></label>
+        <label>Birim fiyat (₺) <input type="number" name="unit_price" step="0.01" min="0" required></label>
+
+        <fieldset class="pay">
+          <legend>Ödeme</legend>
+          <label><input type="radio" name="payment_type" value="cash" checked> Nakit</label>
+          <label><input type="radio" name="payment_type" value="card"> Kart</label>
+        </fieldset>
+        <div id="cardFields" class="card-fields hidden">
+          <label>Kart <input name="card_name" placeholder="Örn. Bonus"></label>
+          <label>Taksit sayısı <input type="number" name="installments" value="1" min="1" max="36"></label>
+          <label>Aylık taksit tutarı (₺) <input type="number" name="monthly_amount" step="0.01" min="0"></label>
+        </div>
+        <label>Not <input name="notes"></label>
+
+        <div id="pPreview" class="preview"></div>
+        <button type="submit">Kaydet</button>
+      </form>
+
+      <h3>Alımlar</h3>
+      <div id="purchaseList"></div>
+    </section>
+
+    <section id="tab-baski" class="tab hidden">
+      <label class="pick">Filament <select id="spoolSel"></select></label>
+      <div id="spoolInfo" class="card"></div>
+
+      <div class="two">
+        <form id="useForm" class="card form">
+          <h3>Baskı / atık düş</h3>
+          <fieldset class="pay">
+            <legend>Tür</legend>
+            <label><input type="radio" name="kind" value="print" checked> Baskı</label>
+            <label><input type="radio" name="kind" value="waste"> Atık</label>
+          </fieldset>
+          <label id="catWrap" class="hidden">Atık türü
+            <select name="category">
+              <option value="failed">Başarısız baskı</option>
+              <option value="purge">Purge</option>
+              <option value="support">Destek</option>
+              <option value="other">Diğer</option>
+            </select>
+          </label>
+          <label>Gram <input type="number" name="grams" min="0.1" step="0.1" required></label>
+          <label>Tarih <input type="date" name="date" required></label>
+          <label>Not <input name="note"></label>
+          <button type="submit">Düş</button>
+        </form>
+
+        <form id="weighForm" class="card form">
+          <h3>Tartı ile düzelt</h3>
+          <p class="muted">Boş makarayı çıkar, sadece filament ağırlığını gir.</p>
+          <label>Ölçülen net gram <input type="number" name="measured_g" min="0" step="0.1" required></label>
+          <label>Tarih <input type="date" name="date" required></label>
+          <label>Not <input name="note"></label>
+          <button type="submit">Kaydet</button>
+        </form>
+      </div>
+
+      <h3>Filament hareketleri</h3>
+      <div id="spoolEvents"></div>
+    </section>
+
+    <section id="tab-yazici" class="tab hidden">
+      <div class="toolbar">
+        <button data-act="addPrinter">+ Yazıcı ekle</button>
+        <span class="muted">Erişim kodu sitede tutulmaz. Yerel bağlayıcının config.json dosyasında kalır.</span>
+      </div>
+      <div id="printerGrid" class="grid"></div>
+
+      <h3>Yazıcı işleri</h3>
+      <p class="muted">Bitmiş işe filament ve gram ata. Fiyat girersen gelir olarak sayılır. Aynı işi Satış'a ayrıca girme.</p>
+      <div id="jobList"></div>
+    </section>
+
+    <section id="tab-atik" class="tab hidden"></section>
+
+    <section id="tab-satis" class="tab hidden">
+      <form id="saleForm" class="card form">
+        <h3 id="saleTitle">Yeni satış</h3>
+        <input type="hidden" name="sale_id">
+        <label>Tarih <input type="date" name="date" required></label>
+        <label>Satılan parça <input name="description" required maxlength="200" placeholder="Örn. Anahtarlık (3 adet)"></label>
+        <div class="sale-items">
+          <span class="muted">Kullanılan filamentler · girilen gram o rulodan düşer</span>
+          <div id="saleItems"></div>
+          <button type="button" class="ghost btn-sm" id="saleAddItem">+ Filament ekle</button>
+        </div>
+        <label>Satış fiyatı (₺) <input type="number" name="price" min="0" step="0.01" required></label>
+        <div class="sale-files">
+          <span class="muted">Resimler ve 3MF / STL dosyaları <span id="uploadLimit"></span></span>
+          <div id="saleFilesOld" class="file-chips"></div>
+          <input type="file" id="saleFileInput" multiple accept="image/jpeg,image/png,image/webp,image/gif,.3mf,.stl">
+          <div id="saleFilesNew" class="file-chips"></div>
+        </div>
+        <div id="salePreview" class="preview"></div>
+        <div class="row"><button type="submit" id="saleSubmit">Kaydet</button><button type="button" class="ghost hidden" id="saleCancel">Vazgeç</button></div>
+      </form>
+      <h3>Satışlar</h3>
+      <div id="saleList"></div>
+    </section>
+  </main>
+</div>
+
+<dialog id="modal" class="modal"><form id="modalForm" class="form"></form></dialog>
+<dialog id="colorDlg" class="modal color-dlg" aria-label="Renk seç">
+  <div class="cp">
+    <div class="cp-left">
+      <div class="cp-title">Temel renkler:</div>
+      <div id="cpBasic" class="cp-grid"></div>
+      <div class="cp-title">Özel renkler:</div>
+      <div id="cpCustom" class="cp-grid"></div>
+    </div>
+    <div class="cp-right">
+      <div class="cp-maps">
+        <div class="cp-spec"><canvas id="cpSpec" width="240" height="240"></canvas><i id="cpCross"></i></div>
+        <div class="cp-lum"><canvas id="cpLum" width="1" height="240"></canvas><i id="cpArrow"></i></div>
+      </div>
+      <div class="cp-bottom">
+        <div class="cp-prev"><div id="cpPrev"></div><span>Renk|Düz</span></div>
+        <div class="cp-nums">
+          <label>Ton: <input data-k="h" type="number" min="0" max="239"></label>
+          <label>Kırmızı: <input data-k="r" type="number" min="0" max="255"></label>
+          <label>Doygun: <input data-k="s" type="number" min="0" max="240"></label>
+          <label>Yeşil: <input data-k="g" type="number" min="0" max="255"></label>
+          <label>Parlak: <input data-k="l" type="number" min="0" max="240"></label>
+          <label>Mavi: <input data-k="b" type="number" min="0" max="255"></label>
+          <label class="cp-hex">Hex: <input id="cpHex" maxlength="7" autocomplete="off" spellcheck="false"></label>
+        </div>
+      </div>
+      <button type="button" id="cpAddCustom" class="ghost">Özel Renklere Ekle</button>
+    </div>
+  </div>
+  <div class="row"><button type="button" id="cpOk">Tamam</button><button type="button" class="ghost" id="cpCancel">İptal</button></div>
+</dialog>
+<div id="toast" class="toast hidden"></div>
+<datalist id="brands">
+  <option>Elas 3D</option><option>Porima</option><option>Bambu Lab</option>
+  <option>eSUN</option><option>Polymaker</option><option>SUNLU</option><option>Elegoo</option>
+</datalist>
+<datalist id="dl-products"></datalist>
+<datalist id="dl-codes"></datalist>
+<script src="static/catalog.js"></script>
+<script src="static/app.js?v=20261021-6"></script>
+</body>
+</html>
